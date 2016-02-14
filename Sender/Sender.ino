@@ -39,10 +39,13 @@ const int ledPin = 13;
 
 int buttonState = 0;
 
-IRsendPanasonic_Old Sender;
+IRsendPanasonic_Old panasonic_Sender;
+IRsend Sender;
+IRsendRaw rawSender;
 
 unsigned long data = 2;
-int len = 10;
+unsigned int data2[3] = { 1,2,3 };
+int len = 3;
 int freq = 56;
 
 void setup() {
@@ -55,9 +58,11 @@ void loop() {
 	buttonState = digitalRead(buttonPin);
 	if (buttonState == HIGH) {
 		digitalWrite(ledPin, HIGH);
-		for (int i = 0; i < 15; i++)
-			Sender.send(data);
+		//for (int i = 0; i < 15; i++)
+		//rawSender.send(data2, len, freq);
+		//otherSender.send(data2, len, 56);
 		//digitalWrite(sendPin, HIGH);
+		panasonic_Sender.send(data);
 	}
 	else {
 		digitalWrite(ledPin, LOW);
