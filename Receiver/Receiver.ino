@@ -37,8 +37,9 @@ const int recvPin = 11;
 const int ledPin = 13;
 
 IRrecv receiver(recvPin);
-//IRdecode decoder;
+IRdecode gdecoder;
 IRdecodePanasonic_Old decoder;
+
 unsigned int buffer[RAWBUF];
 
 
@@ -54,8 +55,8 @@ void loop() {
 
 		digitalWrite(ledPin, HIGH);
 		receiver.resume();
-		decoder.decode();
 		Serial.println(buffer[0]);
+		decoder.decode();
 		decoder.DumpResults();
 	}
 }

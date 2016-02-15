@@ -63,6 +63,9 @@ void loop() {
 		//otherSender.send(data2, len, 56);
 		//digitalWrite(sendPin, HIGH);
 		panasonic_Sender.send(data);
+		//Sender.send(PANASONIC_OLD, data, 10);
+		//rawSender.send(data2, sizeof(data2)/sizeof(int), 56);
+		delay(1000);
 	}
 	else {
 		digitalWrite(ledPin, LOW);
