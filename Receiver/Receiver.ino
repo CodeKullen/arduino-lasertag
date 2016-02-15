@@ -33,15 +33,38 @@ delay(100);              // wait for a second
 #include <IRLibRData.h>
 #include <IRLibMatch.h>
 
+const int numBits = 2;
+const unsigned int Head_Mark = 1500;
+const unsigned int Head_Space = 800;
+const unsigned int Mark_One = 2000;
+const unsigned int Mark_Zero = 1300;
+const unsigned int Space_One = Head_Space;
+const unsigned int Space_Zero = 700; //ignored
+const unsigned int kHz = 58;
+const bool Use_Stop = true;
+
+
+#define LIGHT_STRIKE_DATA_LENGTH    32
+#define LIGHT_STRIKE_RAW_LENGTH     66
+#define LIGHT_STRIKE_HEADER_MARK  6750
+#define LIGHT_STRIKE_HEADER_SPACE  900
+#define LIGHT_STRIKE_MARK_ONE      900
+#define LIGHT_STRIKE_MARK_ZERO     900
+#define LIGHT_STRIKE_SPACE_ONE    3700
+#define LIGHT_STRIKE_SPACE_ZERO    900
+#define LIGHT_STRIKE_KHZ            56//38
+#define LIGHT_STRIKE_USE_STOP     true
+#define LIGHT_STRIKE_MAX_EXTENT      0
+
 const int recvPin = 11;
 const int ledPin = 13;
 
 IRrecv receiver(recvPin);
-IRdecode gdecoder;
-IRdecodePanasonic_Old decoder;
+IRdecodeBase decoder;
+IRdecode fdecoder;
+IRdecodePanasonic_Old gdecoder;
 
 unsigned int buffer[RAWBUF];
-
 
 void setup() {
 	Serial.begin(9600);
@@ -55,8 +78,21 @@ void loop() {
 
 		digitalWrite(ledPin, HIGH);
 		receiver.resume();
-		Serial.println(buffer[0]);
-		decoder.decode();
+		Serial.println(decoder.decodeGeneric(numBits, Head_Mark, Head_Space, Mark_One, Mark_Zero, Space_One, Space_Zero));
+		/*decoder.decodeGeneric(
+			LIGHT_STRIKE_RAW_LENGTH, 
+			LIGHT_STRIKE_HEADER_MARK, 
+			LIGHT_STRIKE_HEADER_SPACE, 
+			//LIGHT_STRIKE_MARK_ONE, 
+			0,
+			LIGHT_STRIKE_MARK_ZERO,
+			LIGHT_STRIKE_SPACE_ONE, 
+			LIGHT_STRIKE_SPACE_ZERO);
+*/
+		
+		long data = decoder.value;
+
+		Serial.println(decoder.value,HEX);
 		decoder.DumpResults();
 	}
 }

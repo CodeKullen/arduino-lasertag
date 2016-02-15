@@ -42,7 +42,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\programming\arduino-projects\Blink1\Blink1\IRLib-master;$(IncludePath)</IncludePath>
+    <IncludePath>C:\programming\arduino-projects\arduino-lasertag\Sender;C:\programming\arduino-projects\Blink1\Blink1\IRLib-master;C:\programming\arduino-projects\arduino-lasertag\Receiver;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
