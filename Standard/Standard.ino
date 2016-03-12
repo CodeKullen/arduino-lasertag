@@ -22,7 +22,7 @@ Author:	lhk
 // -> mark_one = mark_zero
 // and at the beginning of a message are a special mark and space for the head
 
-const int numBits = 4; // how many bits are send, important on the receiving side
+/*const int numBits = 4; // how many bits are send, important on the receiving side
 const unsigned int Head_Mark = 6000;
 const unsigned int Head_Space = 900;
 const unsigned int Mark_One = 900;
@@ -31,6 +31,18 @@ const unsigned int Space_One = 3700;
 const unsigned int Space_Zero = 900;
 const unsigned int kHz = 56; // frequency of the signal, the led can emit any signal but the receiver is tuned to a specific freq
 const bool Use_Stop = true; // add a stopBit to the end of the message
+*/
+
+const int numBits = 3; // how many bits are send, important on the receiving side
+const unsigned int Head_Mark = 1200;
+const unsigned int Head_Space = 600;
+const unsigned int Mark_One = 600;
+const unsigned int Mark_Zero = 600;
+const unsigned int Space_One = 1200;
+const unsigned int Space_Zero = 600;
+const unsigned int kHz = 38; // frequency of the signal, the led can emit any signal but the receiver is tuned to a specific freq
+const bool Use_Stop = true; // add a stopBit to the end of the message
+
 
 const int recvPin = 11;
 unsigned int buffer[RAWBUF];
@@ -60,6 +72,8 @@ unsigned long blinkTimer = 0;
 unsigned long reloadTime = 1000;
 unsigned long stunTime = 4000;
 unsigned long blinkFreq = 500; // after a hit, the leds blink with this frequency
+
+int roundsLeft = 100;
 
 bool reloading = false;
 bool stunned = false;
@@ -189,8 +203,8 @@ void loop() {
 	// player is neither stunned nor reloading
 	else{
 		buttonState = digitalRead(buttonPin);
-		if (buttonState == HIGH) {
-			reloading = true;
+		if (buttonState == LOW) {
+			
 			timer = millis();
 			digitalWrite(ledPin, HIGH);
 
@@ -199,7 +213,9 @@ void loop() {
 			// you can send any number you want (but only numBits bits of it).
 			// with 4 bits being sent, this means we can transmit 2^4=16 distinct values
 			// just increase numBits if you need more
+			Serial.println(millis());
 			Sender.sendGeneric(data, numBits, Head_Mark, Head_Space, Mark_One, Mark_Zero, Space_One, Space_Zero, kHz, Use_Stop, 0);
+			Serial.println(millis());
 
 			// you can't send and receive at the same time. "shooting" automatically disables the receiver
 			receiver.enableIRIn();
@@ -210,10 +226,10 @@ void loop() {
 				while (millis() - timer < shootToneLength) {
 
 					digitalWrite(blinkPin, HIGH);
-					delayMicroseconds(shootTone / 2);
+					delayMicroseconds((shootTone / 8)*7);
 
 					digitalWrite(blinkPin, LOW);
-					delayMicroseconds(shootTone / 2);
+					delayMicroseconds((shootTone / 8));
 				}
 				delay(50);
 			}
