@@ -67,13 +67,16 @@ unsigned long data = 3;
 // TODO: the timer variable is used too often, refactor this into separate variables
 unsigned long timer = 0;
 unsigned long blinkTimer = 0;
+unsigned long shootTimer = 0;
 
 // different delays for different actions
+unsigned long shootTime = 1000;
 unsigned long reloadTime = 1000;
 unsigned long stunTime = 4000;
 unsigned long blinkFreq = 500; // after a hit, the leds blink with this frequency
 
 int roundsLeft = 100;
+const int roundsMax = 100;
 
 bool reloading = false;
 bool stunned = false;
@@ -109,7 +112,7 @@ void setup() {
 
 void loop() {
 	// check for data on the receiver
-	if (receiver.GetResults(&decoder)) {
+	/*if (receiver.GetResults(&decoder)) {
 		digitalWrite(ledPin, HIGH);
 
 		// three outputs:
@@ -160,26 +163,59 @@ void loop() {
 		}
 
 		receiver.resume();
-	}
+	}*/
+
+	if (receiver.GetResults(&decoder)) {
+		digitalWrite(ledPin, HIGH);
+
+		// three outputs:
+		// 1. was the decoding successful? 0 or 1
+		// 2. decoded value
+		// 3. IR signal data
+		if (decoder.decodeGeneric(numBits * 2 + 4, Head_Mark, Head_Space, 0, Mark_Zero, Space_One, Space_Zero)!=0) {
+			
+			Serial.println(decoder.value, HEX);
+			decoder.DumpResults();
+
+			//TODO:
+			// right now a shot is signalled by sending a 3.
+			// this needs to be refined
+			if (decoder.value == 3) {
+				stunned = true;
+				reloading = false;
+				blink = true;
+				digitalWrite(blinkPin, HIGH);
 
 
-	// if the player is stunned, blink with the LEDs
-	if (stunned) {
-		if (millis() - timer > stunTime) {
-			stunned = false;
-			digitalWrite(blinkPin, LOW);
-		}
-		else {
-			// switch the LED's on and off
-			if (millis() - blinkTimer > blinkFreq) {
-				digitalWrite(blinkPin, blink ? HIGH : LOW);
-				blink = !blink;
-				blinkTimer = millis();
+				timer = millis();
+
+				siren = sirenStart;
+				int sign = 1;
+
+				while (millis() - timer < stunTime) {
+
+					digitalWrite(blinkPin, HIGH);
+					delayMicroseconds(siren / 2);
+
+					digitalWrite(blinkPin, LOW);
+					delayMicroseconds(siren / 2);
+
+					siren += sign*deltaSiren;
+					if (siren > 2500)
+						sign *= -1;
+					if (siren < 1000)
+						sign *= -1;
+				}
+				stunned = false;
 			}
+
+			receiver.resume();
 		}
 	}
+
+
 	// if the player is reloading, he can't do anything
-	else if (reloading) {
+	if (reloading) {
 		if (millis() - timer > reloadTime) {
 
 			timer = millis();
@@ -204,42 +240,45 @@ void loop() {
 	else{
 		buttonState = digitalRead(buttonPin);
 		if (buttonState == LOW) {
-			
-			timer = millis();
-			digitalWrite(ledPin, HIGH);
+			//if (millis() - shootTimer > shootTime) {
 
-			// shoot
-			// the only important parameter is data
-			// you can send any number you want (but only numBits bits of it).
-			// with 4 bits being sent, this means we can transmit 2^4=16 distinct values
-			// just increase numBits if you need more
-			Serial.println(millis());
-			Sender.sendGeneric(data, numBits, Head_Mark, Head_Space, Mark_One, Mark_Zero, Space_One, Space_Zero, kHz, Use_Stop, 0);
-			Serial.println(millis());
-
-			// you can't send and receive at the same time. "shooting" automatically disables the receiver
-			receiver.enableIRIn();
-
-			
-			for (int i = 0; i < 3; i++) {
-				timer = millis();
-				while (millis() - timer < shootToneLength) {
-
-					digitalWrite(blinkPin, HIGH);
-					delayMicroseconds((shootTone / 8)*7);
-
-					digitalWrite(blinkPin, LOW);
-					delayMicroseconds((shootTone / 8));
+				shootTimer = millis();
+				reloading = true;
+				roundsLeft--;
+				if (roundsLeft <= 0)
+				{
+					reloading = true;
+					roundsLeft = roundsMax;
 				}
-				delay(50);
-			}
 
-			//TODO:
-			// -> start a timeout, don't let the player fire again until it runs out
-			// -> play a weapon sound
-			// -> blink some leds
+				digitalWrite(ledPin, HIGH);
 
-			digitalWrite(ledPin, LOW);
+				// shoot
+				// the only important parameter is data
+				// you can send any number you want (but only numBits bits of it).
+				// with 4 bits being sent, this means we can transmit 2^4=16 distinct values
+				// just increase numBits if you need more
+				Sender.sendGeneric(data, numBits, Head_Mark, Head_Space, Mark_One, Mark_Zero, Space_One, Space_Zero, kHz, Use_Stop, 0);
+
+				// you can't send and receive at the same time. "shooting" automatically disables the receiver
+				receiver.enableIRIn();
+
+
+				for (int i = 0; i < 3; i++) {
+					timer = millis();
+					while (millis() - timer < shootToneLength) {
+
+						digitalWrite(blinkPin, HIGH);
+						delayMicroseconds((shootTone / 8) * 7);
+
+						digitalWrite(blinkPin, LOW);
+						delayMicroseconds((shootTone / 8));
+					}
+					delay(50);
+				}
+
+				digitalWrite(ledPin, LOW);
+			//}
 		}
 	}
 }
