@@ -1,3 +1,6 @@
+Look at this:
+https://123d.circuits.io/circuits/1680936-the-unnamed-circuit#breadboard
+
 This repository contains code and building instructions for the arduino lasertag project.
 
 Right now there is only the "Standard" project.
