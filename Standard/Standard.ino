@@ -172,8 +172,8 @@ void loop() {
 		// 1. was the decoding successful? 0 or 1
 		// 2. decoded value
 		// 3. IR signal data
-		if (decoder.decodeGeneric(numBits * 2 + 4, Head_Mark, Head_Space, 0, Mark_Zero, Space_One, Space_Zero)!=0) {
-			
+		int val = decoder.decodeGeneric(numBits * 2 + 4, Head_Mark, Head_Space, 0, Mark_Zero, Space_One, Space_Zero);
+		if (val != 0) {
 			Serial.println(decoder.value, HEX);
 			decoder.DumpResults();
 
@@ -208,9 +208,8 @@ void loop() {
 				}
 				stunned = false;
 			}
-
-			receiver.resume();
 		}
+		receiver.enableIRIn();
 	}
 
 
