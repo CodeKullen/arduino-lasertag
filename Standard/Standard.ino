@@ -70,7 +70,7 @@ unsigned long blinkTimer = 0;
 unsigned long shootTimer = 0;
 
 // different delays for different actions
-unsigned long shootTime = 1000;
+unsigned long shootTime = 400;
 unsigned long reloadTime = 1000;
 unsigned long stunTime = 4000;
 unsigned long blinkFreq = 500; // after a hit, the leds blink with this frequency
@@ -173,7 +173,7 @@ void loop() {
 		// 2. decoded value
 		// 3. IR signal data
 		int val = decoder.decodeGeneric(numBits * 2 + 4, Head_Mark, Head_Space, 0, Mark_Zero, Space_One, Space_Zero);
-		if (val != 0) {
+		//if (val != 0) {
 			Serial.println(decoder.value, HEX);
 			decoder.DumpResults();
 
@@ -208,7 +208,7 @@ void loop() {
 				}
 				stunned = false;
 			}
-		}
+		//}
 		receiver.enableIRIn();
 	}
 
@@ -239,10 +239,10 @@ void loop() {
 	else{
 		buttonState = digitalRead(buttonPin);
 		if (buttonState == LOW) {
-			//if (millis() - shootTimer > shootTime) {
+			if (millis() - shootTimer > shootTime) {
 
 				shootTimer = millis();
-				reloading = true;
+				//reloading = true;
 				roundsLeft--;
 				if (roundsLeft <= 0)
 				{
@@ -277,7 +277,7 @@ void loop() {
 				}
 
 				digitalWrite(ledPin, LOW);
-			//}
+			}
 		}
 	}
 }
