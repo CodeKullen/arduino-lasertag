@@ -91,8 +91,10 @@ const int C = 1912;
 int sirenStart = C;
 int siren = 0;
 int deltaSiren = 3;
+int deltaInvalidSiren = 8;
 int reloadTone = 2000;
 int shootTone = 500;
+int invalidSignal = 200;
 
 int reloadToneLength = 100;
 int shootToneLength = 40;
@@ -176,6 +178,29 @@ void loop() {
 		//if (val != 0) {
 			Serial.println(decoder.value, HEX);
 			decoder.DumpResults();
+
+			if (val == 0) {
+				timer = millis();
+
+				siren = invalidSignal;
+				int sign = 1;
+
+
+				while (millis() - timer < 1000) {
+
+					digitalWrite(blinkPin, HIGH);
+					delayMicroseconds(siren / 2);
+
+					digitalWrite(blinkPin, LOW);
+					delayMicroseconds(siren / 2);
+
+					siren += sign*deltaInvalidSiren;
+					if (siren > 400)
+						sign *= -1;
+					if (siren < 50)
+						sign *= -1;
+				}
+			}
 
 			//TODO:
 			// right now a shot is signalled by sending a 3.
