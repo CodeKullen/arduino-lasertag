@@ -89,7 +89,6 @@ const int C = 1912;
 // after a hit, a siren sound is being played.
 // it starts with sirenStart and goes up and down with deltaSiren
 int sirenStart = C;
-int siren = 0;
 int deltaSiren = 3;
 int deltaInvalidSiren = 8;
 int reloadTone = 2000;
@@ -110,62 +109,81 @@ void setup() {
 	decoder.UseExtnBuf(buffer);
 
 	digitalWrite(blinkPin, HIGH);
+	//playDudel(100, 1000, 50, 30, 20);
+	playDudel(200, 300, 10, 2, 200);
+}
+
+void playSiren(int start, int lower, int upper, int delta, int duration) {
+	int siren = start;
+	int sign = 1;
+	unsigned long sirenTimer = millis();
+
+	while (millis() - sirenTimer < duration) {
+
+		digitalWrite(blinkPin, HIGH);
+		delayMicroseconds(siren / 2);
+
+		digitalWrite(blinkPin, LOW);
+		delayMicroseconds(siren / 2);
+
+		siren += sign*delta;
+		if (siren > upper)
+			sign *= -1;
+		if (siren < lower)
+			sign *= -1;
+	}
+}
+
+void playDots(int frequency, int signal, int gap, int number) {
+	for (int i = 0; i < number; i++) {
+		timer = millis();
+		while (millis() - timer < signal) {
+
+			digitalWrite(blinkPin, HIGH);
+			delayMicroseconds(frequency / 2);
+
+			digitalWrite(blinkPin, LOW);
+			delayMicroseconds(frequency / 2);
+		}
+		delay(gap);
+	}
+}
+
+void playDudel(int min, int max, int signal, int gap, int number) {
+	int frequency = 0;
+	for (int i = 0; i < number; i++) {
+		timer = millis();
+		frequency = random(min, max);
+		while (millis() - timer < signal) {
+
+			digitalWrite(blinkPin, HIGH);
+			delayMicroseconds(frequency / 2);
+
+			digitalWrite(blinkPin, LOW);
+			delayMicroseconds(frequency / 2);
+		}
+		delay(gap);
+	}
+}
+
+void playKhrrek(int min, int max, int signal, int gap, int number) {
+	int frequency = 0;
+	for (int i = 0; i < number; i++) {
+		timer = millis();
+		while (millis() - timer < signal) {
+			frequency = random(min, max);
+
+			digitalWrite(blinkPin, HIGH);
+			delayMicroseconds(frequency / 2);
+
+			digitalWrite(blinkPin, LOW);
+			delayMicroseconds(frequency / 2);
+		}
+		delay(gap);
+	}
 }
 
 void loop() {
-	// check for data on the receiver
-	/*if (receiver.GetResults(&decoder)) {
-		digitalWrite(ledPin, HIGH);
-
-		// three outputs:
-		// 1. was the decoding successful? 0 or 1
-		// 2. decoded value
-		// 3. IR signal data
-		Serial.println(decoder.decodeGeneric(numBits * 2 + 4, Head_Mark, Head_Space, 0, Mark_Zero, Space_One, Space_Zero));
-		Serial.println(decoder.value, HEX);
-		decoder.DumpResults();
-
-
-		//TODO: look at decoder.value. if it's the code of the enemy team
-		// -> blink some red leds
-		// -> play a sound
-		// -> disable the system for a few seconds
-
-		//TODO:
-		// right now a shot is signalled by sending a 3.
-		// this needs to be refined
-		if (decoder.value == 3) {
-			stunned = true;
-			reloading = false;
-			blink = true;
-			digitalWrite(blinkPin, HIGH);
-
-
-			timer = millis();
-			blinkTimer = millis();
-
-			siren = sirenStart;
-			int sign = 1;
-
-			while (millis() - timer < stunTime) {
-
-				digitalWrite(blinkPin, HIGH);
-				delayMicroseconds(siren / 2);
-
-				digitalWrite(blinkPin, LOW);
-				delayMicroseconds(siren / 2);
-
-				siren += sign*deltaSiren;
-				if (siren > 2500)
-					sign *= -1;
-				if (siren < 1000)
-					sign *= -1;
-			}
-			stunned = false;
-		}
-
-		receiver.resume();
-	}*/
 
 	if (receiver.GetResults(&decoder)) {
 		digitalWrite(ledPin, HIGH);
@@ -180,26 +198,9 @@ void loop() {
 			decoder.DumpResults();
 
 			if (val == 0) {
-				timer = millis();
 
-				siren = invalidSignal;
-				int sign = 1;
+				playSiren(invalidSignal, 100, 400, 8, 1000);
 
-
-				while (millis() - timer < 1000) {
-
-					digitalWrite(blinkPin, HIGH);
-					delayMicroseconds(siren / 2);
-
-					digitalWrite(blinkPin, LOW);
-					delayMicroseconds(siren / 2);
-
-					siren += sign*deltaInvalidSiren;
-					if (siren > 400)
-						sign *= -1;
-					if (siren < 50)
-						sign *= -1;
-				}
 			}
 
 			//TODO:
@@ -214,23 +215,12 @@ void loop() {
 
 				timer = millis();
 
-				siren = sirenStart;
-				int sign = 1;
-
-				while (millis() - timer < stunTime) {
-
-					digitalWrite(blinkPin, HIGH);
-					delayMicroseconds(siren / 2);
-
-					digitalWrite(blinkPin, LOW);
-					delayMicroseconds(siren / 2);
-
-					siren += sign*deltaSiren;
-					if (siren > 2500)
-						sign *= -1;
-					if (siren < 1000)
-						sign *= -1;
-				}
+				//300,200,700,3,stunTime
+				//500,400,900,1,stunTime -- sounds like an ambulance
+				//playKhrrek(100, 1000, 50, 30, 20);
+				//playKhrrek(100, 300, 80, 10, 20); geiger
+				playKhrrek(200, 300, 90, 1, 20);
+				//playDots(6000, 100, 50, 3);
 				stunned = false;
 			}
 		//}
