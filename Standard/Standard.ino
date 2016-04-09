@@ -109,8 +109,8 @@ void setup() {
 	decoder.UseExtnBuf(buffer);
 
 	digitalWrite(blinkPin, HIGH);
-	//playDudel(100, 1000, 50, 30, 20);
-	playDudel(200, 300, 10, 2, 200);
+	playDudel(100, 1000, 50, 30, 20);
+	//playDudel(200, 300, 10, 2, 200);
 }
 
 void playSiren(int start, int lower, int upper, int delta, int duration) {
@@ -184,7 +184,12 @@ void playKhrrek(int min, int max, int signal, int gap, int number) {
 }
 
 void loop() {
-
+	/*
+	digitalWrite(3, HIGH);
+	delay(500);
+	digitalWrite(3, LOW);
+	delay(100);
+	return;*/
 	if (receiver.GetResults(&decoder)) {
 		digitalWrite(ledPin, HIGH);
 
@@ -216,10 +221,10 @@ void loop() {
 				timer = millis();
 
 				//300,200,700,3,stunTime
-				//500,400,900,1,stunTime -- sounds like an ambulance
+				playSiren(500, 400, 900, 1, stunTime);// -- sounds like an ambulance
 				//playKhrrek(100, 1000, 50, 30, 20);
 				//playKhrrek(100, 300, 80, 10, 20); geiger
-				playKhrrek(200, 300, 90, 1, 20);
+				//playKhrrek(200, 300, 90, 1, 20);
 				//playDots(6000, 100, 50, 3);
 				stunned = false;
 			}
