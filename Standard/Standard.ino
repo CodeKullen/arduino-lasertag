@@ -34,12 +34,12 @@ const bool Use_Stop = true; // add a stopBit to the end of the message
 */
 
 const int numBits = 3; // how many bits are send, important on the receiving side
-const unsigned int Head_Mark = 1200;
-const unsigned int Head_Space = 600;
-const unsigned int Mark_One = 600;
-const unsigned int Mark_Zero = 600;
-const unsigned int Space_One = 1200;
-const unsigned int Space_Zero = 600;
+const unsigned int Head_Mark = 1800;
+const unsigned int Head_Space = 1000;
+const unsigned int Mark_One = 1000;
+const unsigned int Mark_Zero = 1000;
+const unsigned int Space_One = 2000;
+const unsigned int Space_Zero = 1000;
 const unsigned int kHz = 38; // frequency of the signal, the led can emit any signal but the receiver is tuned to a specific freq
 const bool Use_Stop = true; // add a stopBit to the end of the message
 
@@ -68,15 +68,18 @@ unsigned long data = 3;
 unsigned long timer = 0;
 unsigned long blinkTimer = 0;
 unsigned long shootTimer = 0;
+unsigned long reloadTimer = 0;
+unsigned long reloadStepTimer = 0;
 
 // different delays for different actions
 unsigned long shootTime = 400;
-unsigned long reloadTime = 1000;
+unsigned long reloadTime = 3000;
+unsigned long reloadStepTime = 1000;
 unsigned long stunTime = 4000;
 unsigned long blinkFreq = 500; // after a hit, the leds blink with this frequency
 
-int roundsLeft = 100;
-const int roundsMax = 100;
+int roundsLeft = 5;
+const int roundsMax = 5;
 
 bool reloading = false;
 bool stunned = false;
@@ -91,17 +94,18 @@ const int C = 1912;
 int sirenStart = C;
 int deltaSiren = 3;
 int deltaInvalidSiren = 8;
-int reloadTone = 2000;
+int reloadTone = 300;
 int shootTone = 500;
 int invalidSignal = 200;
 
 int reloadToneLength = 100;
+int invalidTimeLength = 1000;
 int shootToneLength = 40;
 
 
 void setup() {
 	pinMode(ledPin, OUTPUT);
-	pinMode(buttonPin, INPUT);
+	pinMode(buttonPin, INPUT_PULLUP);
 	pinMode(blinkPin, OUTPUT);
 
 	Serial.begin(9600);
@@ -110,7 +114,10 @@ void setup() {
 
 	digitalWrite(blinkPin, HIGH);
 	playDudel(100, 1000, 50, 30, 20);
-	//playDudel(200, 300, 10, 2, 200);
+	digitalWrite(13, HIGH);
+
+	//playSiren(500, 400, 900, 1, stunTime);
+	//playKhrrek(200, 300, 90, 1, 20);
 }
 
 void playSiren(int start, int lower, int upper, int delta, int duration) {
@@ -184,12 +191,6 @@ void playKhrrek(int min, int max, int signal, int gap, int number) {
 }
 
 void loop() {
-	/*
-	digitalWrite(3, HIGH);
-	delay(500);
-	digitalWrite(3, LOW);
-	delay(100);
-	return;*/
 	if (receiver.GetResults(&decoder)) {
 		digitalWrite(ledPin, HIGH);
 
@@ -204,7 +205,8 @@ void loop() {
 
 			if (val == 0) {
 
-				playSiren(invalidSignal, 100, 400, 8, 1000);
+
+				playSiren(1450, 1400, 1500, 1, invalidTimeLength);
 
 			}
 
@@ -221,10 +223,10 @@ void loop() {
 				timer = millis();
 
 				//300,200,700,3,stunTime
-				playSiren(500, 400, 900, 1, stunTime);// -- sounds like an ambulance
+				//playSiren(500, 400, 900, 1, stunTime);// -- sounds like an ambulance
 				//playKhrrek(100, 1000, 50, 30, 20);
 				//playKhrrek(100, 300, 80, 10, 20); geiger
-				//playKhrrek(200, 300, 90, 1, 20);
+				playKhrrek(200, 300, 90, 1, 20);
 				//playDots(6000, 100, 50, 3);
 				stunned = false;
 			}
@@ -235,24 +237,16 @@ void loop() {
 
 	// if the player is reloading, he can't do anything
 	if (reloading) {
-		if (millis() - timer > reloadTime) {
 
-			timer = millis();
-			while (millis() - timer<reloadToneLength) {
-
-				digitalWrite(blinkPin, HIGH);
-				delayMicroseconds(reloadTone / 2);
-
-				digitalWrite(blinkPin, LOW);
-				delayMicroseconds(reloadTone / 2);
-			}
-
+		
+		if (millis() - reloadTimer > reloadTime) {
 			reloading = false;
-			digitalWrite(blinkPin, HIGH);
-			delay(100);
-			digitalWrite(blinkPin, LOW);
-
-
+			reloadTimer = millis();
+			playDots(500, 300, 0, 1);
+		}
+		else if(millis()-reloadStepTimer>reloadStepTime){
+			reloadStepTimer = millis();
+			playDots(400, 100, 0, 1);
 		}
 	} 
 	// player is neither stunned nor reloading
@@ -268,6 +262,8 @@ void loop() {
 				{
 					reloading = true;
 					roundsLeft = roundsMax;
+					reloadTimer = millis();
+					reloadStepTimer = millis();
 				}
 
 				digitalWrite(ledPin, HIGH);
@@ -277,8 +273,9 @@ void loop() {
 				// you can send any number you want (but only numBits bits of it).
 				// with 4 bits being sent, this means we can transmit 2^4=16 distinct values
 				// just increase numBits if you need more
+				Serial.println(millis());
 				Sender.sendGeneric(data, numBits, Head_Mark, Head_Space, Mark_One, Mark_Zero, Space_One, Space_Zero, kHz, Use_Stop, 0);
-
+				Serial.println(millis());
 				// you can't send and receive at the same time. "shooting" automatically disables the receiver
 				receiver.enableIRIn();
 
