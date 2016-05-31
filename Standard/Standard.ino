@@ -3,6 +3,7 @@ Name:		Standard.ino
 Created:	2/19/2016 4:34:36 PM
 Author:	lhk
 */
+#include "Protocol.h"
 #include <IRLib.h>
 #include <IRLibTimer.h>
 #include <IRLibRData.h>
@@ -33,19 +34,10 @@ const unsigned int kHz = 56; // frequency of the signal, the led can emit any si
 const bool Use_Stop = true; // add a stopBit to the end of the message
 */
 
-const int numBits = 3; // how many bits are send, important on the receiving side
-const unsigned int Head_Mark = 1800;
-const unsigned int Head_Space = 1000;
-const unsigned int Mark_One = 1000;
-const unsigned int Mark_Zero = 1000;
-const unsigned int Space_One = 2000;
-const unsigned int Space_Zero = 1000;
-const unsigned int kHz = 38; // frequency of the signal, the led can emit any signal but the receiver is tuned to a specific freq
-const bool Use_Stop = true; // add a stopBit to the end of the message
-
-
 const int recvPin = 11;
 unsigned int buffer[RAWBUF];
+
+int team = TEAM_ONE;
 
 // Objects to send and receive IR data
 IRsend Sender;
@@ -190,6 +182,19 @@ void playKhrrek(int min, int max, int signal, int gap, int number) {
 	}
 }
 
+void setTeam(int _team)
+{
+	team = _team;
+	if (team == TEAM_ONE) {
+		shootTone = 500;
+		playDots(500, 500, 0, 1);
+	}
+	else {
+		shootTone = 550;
+		playDots(550, 500, 0, 1);
+	}
+}
+
 void loop() {
 	if (receiver.GetResults(&decoder)) {
 		digitalWrite(ledPin, HIGH);
@@ -200,36 +205,51 @@ void loop() {
 		// 3. IR signal data
 		int val = decoder.decodeGeneric(numBits * 2 + 4, Head_Mark, Head_Space, 0, Mark_Zero, Space_One, Space_Zero);
 		//if (val != 0) {
-			Serial.println(decoder.value, HEX);
-			decoder.DumpResults();
+		Serial.println(decoder.value, HEX);
+		decoder.DumpResults();
 
-			if (val == 0) {
+		if (val == 0) {
+			playSiren(1450, 1400, 1500, 1, invalidTimeLength);
+		}
+		
+		int hit=3;/*
+		int friendly_fire;
+
+		if (team == TEAM_ONE)
+		{
+			hit = TEAM_TWO_SHOT;
+			friendly_fire = TEAM_ONE_SHOT;
+		}
+		else
+		{
+			hit = TEAM_ONE_SHOT;
+			friendly_fire = TEAM_TWO_SHOT;
+		}
 
 
-				playSiren(1450, 1400, 1500, 1, invalidTimeLength);
+		if (decoder.value == TEAM_ONE_SET)
+			setTeam(TEAM_ONE);
+		else if (decoder.value == TEAM_TWO_SET)
+			setTeam(TEAM_TWO);
+		//TODO:
+		// right now a shot is signalled by sending a 3.
+		// this needs to be refined
+		else */if (decoder.value == hit) {
+			stunned = true;
+			reloading = false;
+			blink = true;
+			digitalWrite(blinkPin, HIGH);
 
-			}
+			timer = millis();
 
-			//TODO:
-			// right now a shot is signalled by sending a 3.
-			// this needs to be refined
-			if (decoder.value == 3) {
-				stunned = true;
-				reloading = false;
-				blink = true;
-				digitalWrite(blinkPin, HIGH);
-
-
-				timer = millis();
-
-				//300,200,700,3,stunTime
-				//playSiren(500, 400, 900, 1, stunTime);// -- sounds like an ambulance
-				//playKhrrek(100, 1000, 50, 30, 20);
-				//playKhrrek(100, 300, 80, 10, 20); geiger
-				playKhrrek(200, 300, 90, 1, 20);
-				//playDots(6000, 100, 50, 3);
-				stunned = false;
-			}
+			//300,200,700,3,stunTime
+			//playSiren(500, 400, 900, 1, stunTime);// -- sounds like an ambulance
+			//playKhrrek(100, 1000, 50, 30, 20);
+			//playKhrrek(100, 300, 80, 10, 20); geiger
+			playKhrrek(200, 300, 90, 1, 20);
+			//playDots(6000, 100, 50, 3);
+			stunned = false;
+		}
 		//}
 		receiver.enableIRIn();
 	}
@@ -237,20 +257,18 @@ void loop() {
 
 	// if the player is reloading, he can't do anything
 	if (reloading) {
-
-		
 		if (millis() - reloadTimer > reloadTime) {
 			reloading = false;
 			reloadTimer = millis();
 			playDots(500, 300, 0, 1);
 		}
-		else if(millis()-reloadStepTimer>reloadStepTime){
+		else if (millis() - reloadStepTimer > reloadStepTime) {
 			reloadStepTimer = millis();
 			playDots(400, 100, 0, 1);
 		}
-	} 
+	}
 	// player is neither stunned nor reloading
-	else{
+	else {
 		buttonState = digitalRead(buttonPin);
 		if (buttonState == LOW) {
 			if (millis() - shootTimer > shootTime) {
