@@ -105,8 +105,9 @@ void setup() {
 	decoder.UseExtnBuf(buffer);
 
 	digitalWrite(blinkPin, HIGH);
-	playDudel(100, 1000, 50, 30, 20);
-	digitalWrite(13, HIGH);
+	playDudel(100, 1000, 50, 30, 5);
+
+	digitalWrite(ledPin, LOW);
 
 	//playSiren(500, 400, 900, 1, stunTime);
 	//playKhrrek(200, 300, 90, 1, 20);
@@ -197,7 +198,6 @@ void setTeam(int _team)
 
 void loop() {
 	if (receiver.GetResults(&decoder)) {
-		digitalWrite(ledPin, HIGH);
 
 		// three outputs:
 		// 1. was the decoding successful? 0 or 1
@@ -209,7 +209,14 @@ void loop() {
 		decoder.DumpResults();
 
 		if (val == 0) {
-			playSiren(1450, 1400, 1500, 1, invalidTimeLength);
+			playSiren(1450, 1400, 1500, 1, invalidTimeLength/2);
+
+			for (int i = 0; i < 5; i++) {
+				digitalWrite(ledPin, HIGH);
+				delay(100);
+				digitalWrite(ledPin, LOW);
+				delay(100);
+			}
 		}
 		
 		int hit=3;/*
@@ -284,8 +291,6 @@ void loop() {
 					reloadStepTimer = millis();
 				}
 
-				digitalWrite(ledPin, HIGH);
-
 				// shoot
 				// the only important parameter is data
 				// you can send any number you want (but only numBits bits of it).
@@ -310,8 +315,6 @@ void loop() {
 					}
 					delay(50);
 				}
-
-				digitalWrite(ledPin, LOW);
 			}
 		}
 	}
