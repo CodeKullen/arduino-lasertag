@@ -3,72 +3,33 @@ Name:		Standard.ino
 Created:	2/19/2016 4:34:36 PM
 Author:	lhk
 */
-#include "Protocol.h"
+#include "Definitions.h"
+#include "Timers.h"
+#include "SoundEffects.h"
 #include <IRLib.h>
 #include <IRLibTimer.h>
 #include <IRLibRData.h>
 #include <IRLibMatch.h>
 
 
-// IR configuration
-// each IR message consists of pulses of IR light
-// these pulses form a digital signal
-// attention: usually, one would expect a pulse = 1, a gap = 0
-// a pulse of IR light is called a mark, a gap is called a space
-// here each bit in the signal is transmitted by both a mark and a space
-// -> 1 is encoded as the mark for a one and the mark for a space
-// -> 0 is enoceded by mark for 0 and space for 0
-//
-// it gets more complicated: usually only spaces are varied
-// -> mark_one = mark_zero
-// and at the beginning of a message are a special mark and space for the head
-
-/*const int numBits = 4; // how many bits are send, important on the receiving side
-const unsigned int Head_Mark = 6000;
-const unsigned int Head_Space = 900;
-const unsigned int Mark_One = 900;
-const unsigned int Mark_Zero = 900;
-const unsigned int Space_One = 3700;
-const unsigned int Space_Zero = 900;
-const unsigned int kHz = 56; // frequency of the signal, the led can emit any signal but the receiver is tuned to a specific freq
-const bool Use_Stop = true; // add a stopBit to the end of the message
-*/
-
-const int recvPin = 11;
-unsigned int buffer[RAWBUF];
 
 int team = TEAM_ONE;
 
 // Objects to send and receive IR data
+unsigned int buffer[RAWBUF];
 IRsend Sender;
-IRrecv receiver(recvPin);
+IRrecv receiver(RECVPIN);
 IRdecode decoder;
-
-// pins on the arduino
-const int buttonPin = 2;
-const int ledPin = 13;
-const int blinkPin = 8;
-int buttonState = 0;
 
 // data to be transmitted by the IR led
 // right now, we always send the value 3
 // TODO: define different codes for different teams/players/pickups
 unsigned long data = 3;
 
-// timers
-// TODO: the timer variable is used too often, refactor this into separate variables
-unsigned long timer = 0;
-unsigned long blinkTimer = 0;
-unsigned long shootTimer = 0;
-unsigned long reloadTimer = 0;
-unsigned long reloadStepTimer = 0;
 
-// different delays for different actions
-unsigned long shootTime = 400;
-unsigned long reloadTime = 3000;
-unsigned long reloadStepTime = 1000;
-unsigned long stunTime = 4000;
-unsigned long blinkFreq = 500; // after a hit, the leds blink with this frequency
+int buttonState = 0;
+
+Timers timers = Timers();
 
 int roundsLeft = 5;
 const int roundsMax = 5;
@@ -90,97 +51,23 @@ int reloadTone = 300;
 int shootTone = 500;
 int invalidSignal = 200;
 
-int reloadToneLength = 100;
-int invalidTimeLength = 1000;
-int shootToneLength = 40;
-
 
 void setup() {
-	pinMode(ledPin, OUTPUT);
-	pinMode(buttonPin, INPUT_PULLUP);
-	pinMode(blinkPin, OUTPUT);
+	pinMode(LEDPIN, OUTPUT);
+	pinMode(BUTTONPIN, INPUT_PULLUP);
+	pinMode(BLINKPIN, OUTPUT);
 
 	Serial.begin(9600);
 	receiver.enableIRIn();
 	decoder.UseExtnBuf(buffer);
 
-	digitalWrite(blinkPin, HIGH);
+	digitalWrite(BLINKPIN, HIGH);
 	playDudel(100, 1000, 50, 30, 5);
 
-	digitalWrite(ledPin, LOW);
+	digitalWrite(LEDPIN, LOW);
 
 	//playSiren(500, 400, 900, 1, stunTime);
 	//playKhrrek(200, 300, 90, 1, 20);
-}
-
-void playSiren(int start, int lower, int upper, int delta, int duration) {
-	int siren = start;
-	int sign = 1;
-	unsigned long sirenTimer = millis();
-
-	while (millis() - sirenTimer < duration) {
-
-		digitalWrite(blinkPin, HIGH);
-		delayMicroseconds(siren / 2);
-
-		digitalWrite(blinkPin, LOW);
-		delayMicroseconds(siren / 2);
-
-		siren += sign*delta;
-		if (siren > upper)
-			sign *= -1;
-		if (siren < lower)
-			sign *= -1;
-	}
-}
-
-void playDots(int frequency, int signal, int gap, int number) {
-	for (int i = 0; i < number; i++) {
-		timer = millis();
-		while (millis() - timer < signal) {
-
-			digitalWrite(blinkPin, HIGH);
-			delayMicroseconds(frequency / 2);
-
-			digitalWrite(blinkPin, LOW);
-			delayMicroseconds(frequency / 2);
-		}
-		delay(gap);
-	}
-}
-
-void playDudel(int min, int max, int signal, int gap, int number) {
-	int frequency = 0;
-	for (int i = 0; i < number; i++) {
-		timer = millis();
-		frequency = random(min, max);
-		while (millis() - timer < signal) {
-
-			digitalWrite(blinkPin, HIGH);
-			delayMicroseconds(frequency / 2);
-
-			digitalWrite(blinkPin, LOW);
-			delayMicroseconds(frequency / 2);
-		}
-		delay(gap);
-	}
-}
-
-void playKhrrek(int min, int max, int signal, int gap, int number) {
-	int frequency = 0;
-	for (int i = 0; i < number; i++) {
-		timer = millis();
-		while (millis() - timer < signal) {
-			frequency = random(min, max);
-
-			digitalWrite(blinkPin, HIGH);
-			delayMicroseconds(frequency / 2);
-
-			digitalWrite(blinkPin, LOW);
-			delayMicroseconds(frequency / 2);
-		}
-		delay(gap);
-	}
 }
 
 void setTeam(int _team)
@@ -209,12 +96,12 @@ void loop() {
 		decoder.DumpResults();
 
 		if (val == 0) {
-			playSiren(1450, 1400, 1500, 1, invalidTimeLength/2);
+			playSiren(1450, 1400, 1500, 1, timers.invalidTimeLength/2);
 
 			for (int i = 0; i < 5; i++) {
-				digitalWrite(ledPin, HIGH);
+				digitalWrite(LEDPIN, HIGH);
 				delay(100);
-				digitalWrite(ledPin, LOW);
+				digitalWrite(LEDPIN, LOW);
 				delay(75);
 			}
 		}
@@ -245,9 +132,9 @@ void loop() {
 			stunned = true;
 			reloading = false;
 			blink = true;
-			digitalWrite(blinkPin, HIGH);
+			digitalWrite(BLINKPIN, HIGH);
 
-			timer = millis();
+			timers.generalTimer = millis();
 
 			//300,200,700,3,stunTime
 			//playSiren(500, 400, 900, 1, stunTime);// -- sounds like an ambulance
@@ -264,31 +151,31 @@ void loop() {
 
 	// if the player is reloading, he can't do anything
 	if (reloading) {
-		if (millis() - reloadTimer > reloadTime) {
+		if (millis() - timers.reloadTimer > timers.reloadTime) {
 			reloading = false;
-			reloadTimer = millis();
+			timers.reloadTimer = millis();
 			playDots(500, 300, 0, 1);
 		}
-		else if (millis() - reloadStepTimer > reloadStepTime) {
-			reloadStepTimer = millis();
+		else if (millis() - timers.reloadStepTimer > timers.reloadStepTime) {
+			timers.reloadStepTimer = millis();
 			playDots(400, 100, 0, 1);
 		}
 	}
 	// player is neither stunned nor reloading
 	else {
-		buttonState = digitalRead(buttonPin);
+		buttonState = digitalRead(BUTTONPIN);
 		if (buttonState == LOW) {
-			if (millis() - shootTimer > shootTime) {
+			if (millis() - timers.shootTimer > timers.shootTime) {
 
-				shootTimer = millis();
+				timers.shootTimer = millis();
 				//reloading = true;
 				roundsLeft--;
 				if (roundsLeft <= 0)
 				{
 					reloading = true;
 					roundsLeft = roundsMax;
-					reloadTimer = millis();
-					reloadStepTimer = millis();
+					timers.reloadTimer = millis();
+					timers.reloadStepTimer = millis();
 				}
 
 				// shoot
@@ -304,13 +191,13 @@ void loop() {
 
 
 				for (int i = 0; i < 3; i++) {
-					timer = millis();
-					while (millis() - timer < shootToneLength) {
+					timers.generalTimer = millis();
+					while (millis() - timers.generalTimer < timers.shootToneLength) {
 
-						digitalWrite(blinkPin, HIGH);
+						digitalWrite(BLINKPIN, HIGH);
 						delayMicroseconds((shootTone / 8) * 7);
 
-						digitalWrite(blinkPin, LOW);
+						digitalWrite(BLINKPIN, LOW);
 						delayMicroseconds((shootTone / 8));
 					}
 					delay(50);

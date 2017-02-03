@@ -86,5 +86,8 @@ extern "C" void __cxa_pure_virtual() {;}
 #define portInputRegister(P)
 #define portModeRegister(P)
 #include <..\Standard\Standard.ino>
-#include <..\Standard\Protocol.h>
+#include <..\Standard\Definitions.h>
+#include <..\Standard\SoundEffects.cpp>
+#include <..\Standard\SoundEffects.h>
+#include <..\Standard\Timers.h>
 #endif
