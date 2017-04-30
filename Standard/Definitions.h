@@ -3,7 +3,7 @@
 
 
 #if defined(ARDUINO) && ARDUINO >= 100
-	#include "arduino.h"
+	//#include "arduino.h" // not needed in Arduino IDE, if all sources are ino instead of cpp.
 #else
 	#include "WProgram.h"
 #endif
